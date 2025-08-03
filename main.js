@@ -1,73 +1,42 @@
-// Check login status
-const user = localStorage.getItem("dcn_user");
-if (!user && window.location.pathname.includes("index.html")) {
-  window.location.href = "login.html";
-}
+// main.js
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// Display username
-document.addEventListener("DOMContentLoaded", () => {
-  const userDisplay = document.getElementById("username");
-  if (userDisplay) userDisplay.innerText = user || "anonymous";
-});
+const SUPABASE_URL = "https://qpbodnhybepicpzazjzp.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYm9kbmh5YmVwaWNwemF6anpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyMzYyOTUsImV4cCI6MjA2OTgxMjI5NX0.DRjrKxFnLilCzlB66iTcSwCWb0sAJCMZUYIN0ve4i3k"; // Replace this with your anon key
 
-// Login handler
-function handleLogin(e) {
-  e.preventDefault();
-  const user = document.getElementById("username").value;
-  const pass = document.getElementById("password").value;
-  if (user === "demo" && pass === "demo") {
-    localStorage.setItem("dcn_user", user);
-    window.location.href = "index.html";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Handle Signup
+async function handleSignup(event) {
+  event.preventDefault();
+  const email = document.getElementById("signup_email").value;
+  const password = document.getElementById("signup_password").value;
+
+  const { error } = await supabase.auth.signUp({ email, password });
+  if (error) {
+    alert("Signup failed: " + error.message);
   } else {
-    alert("Invalid credentials. Use demo/demo");
+    alert("Check your email for a confirmation link.");
   }
 }
 
-// Signup handler (disabled for now)
-function handleSignup(e) {
-  e.preventDefault();
-  alert("Signup disabled. Use demo/demo login.");
+// Handle Login
+async function handleLogin(event) {
+  event.preventDefault();
+  const email = document.getElementById("login_email").value;
+  const password = document.getElementById("login_password").value;
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    alert("Login failed: " + error.message);
+  } else {
+    localStorage.setItem("dcn_user", JSON.stringify(data.session));
+    window.location.href = "index.html";
+  }
 }
 
-// Utility to get current user
-function getUser() {
-  return localStorage.getItem("dcn_user") || "anonymous";
-}
-
-// Submit job to backend
-function submitJob() {
-  const inputText = document.getElementById("inputText").value;
-  const taskType = document.getElementById("taskType").value;
-
-  fetch("http://localhost:8000/submit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      input_text: inputText,
-      task_type: taskType,
-      node_id: "frontend-web",
-      user_id: getUser()
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    alert("Job submitted with ID: " + data.job_id);
-    loadJobs();
-  });
-}
-
-// Load job history for current user
-function loadJobs() {
-  fetch(`http://localhost:8000/user-jobs/${getUser()}`)
-    .then(res => res.json())
-    .then(data => {
-      const jobList = document.getElementById("jobList");
-      if (!jobList) return;
-      jobList.innerHTML = "";
-      data.jobs.forEach(job => {
-        const li = document.createElement("li");
-        li.innerText = `${job[0]} | ${job[2]} | ${job[3]}\n${job[1]}\n${job[4]}`;
-        jobList.appendChild(li);
-      });
-    });
+// Get current user (optional)
+async function getUser() {
+  const { data } = await supabase.auth.getUser();
+  return data.user;
 }
