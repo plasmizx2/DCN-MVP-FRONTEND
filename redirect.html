@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecting...</title>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const SUPABASE_URL = "https://qpbodnhybepicpzazjzp.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYm9kbmh5YmVwaWNwemF6anpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyMzYyOTUsImV4cCI6MjA2OTgxMjI5NX0.DRjrKxFnLilCzlB66iTcSwCWb0sAJCMZUYIN0ve4i3k";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function handleRedirect() {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error("Session fetch failed:", error.message);
+        window.location.href = "login.html";
+        return;
+      }
+
+      if (data.session) {
+        const userId = data.session.user.id;
+        localStorage.setItem("dcn_user", JSON.stringify(data.session.user));
+        window.location.href = "index.html";
+      } else {
+        window.location.href = "login.html";
+      }
+    }
+
+    handleRedirect();
+  </script>
+</head>
+<body>
+  Redirecting...
+</body>
+</html>

@@ -3,59 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <title>Login | DCN</title>
-  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>Login to DCN</h1>
-
-  <!-- Email/Password Login -->
-  <form id="login-form">
-    <input type="email" id="email" placeholder="Email" required>
-    <input type="password" id="password" placeholder="Password" required>
-    <button type="submit">Login</button>
-  </form>
-
-  <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
-
-  <!-- Google OAuth -->
-  <hr>
-  <button id="google-login">Continue with Google</button>
+  <button onclick="loginWithGoogle()">Login with Google</button>
 
   <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    const SUPABASE_URL = 'https://<YOUR_PROJECT_ID>.supabase.co';
-    const SUPABASE_KEY = '<YOUR_ANON_PUBLIC_KEY>';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = createClient(
+      "https://qpbodnhybepicpzazjzp.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYm9kbmh5YmVwaWNwemF6anpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyMzYyOTUsImV4cCI6MjA2OTgxMjI5NX0.DRjrKxFnLilCzlB66iTcSwCWb0sAJCMZUYIN0ve4i3k"
+    );
 
-    // Email/password login
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+    window.loginWithGoogle = async function () {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/redirect.html"
+        }
       });
 
       if (error) {
-        alert(error.message);
-      } else {
-        localStorage.setItem('dcn_user', email);
-        window.location.href = 'index.html';
+        alert("Login error: " + error.message);
       }
-    });
-
-    // Google OAuth login
-    document.getElementById('google-login').addEventListener('click', async () => {
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: 'https://dcn.dumontdev.com/index.html'
-        }
-      });
-    });
+    };
   </script>
 </body>
 </html>

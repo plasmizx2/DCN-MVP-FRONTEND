@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <title>Distributed Compute Network</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <h1>DCN Prompt Submit</h1>
-
   <p>Welcome, <span id="userEmail"></span> | <a href="#" onclick="logout()">Logout</a></p>
 
   <label for="task">Task Type:</label>
@@ -24,25 +24,22 @@
   <h2>Status:</h2>
   <pre id="status">Waiting for job...</pre>
 
-  <h2>Result:</h2>
-  <pre id="result">Result will appear here.</pre>
-
   <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-    const SUPABASE_URL = 'https://qpbodnhybepicpzazjzp.supabase.co';
-    const SUPABASE_KEY = 'YOUR_ANON_KEY_HERE'; // use your real anon key
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = createClient(
+      "https://qpbodnhybepicpzazjzp.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYm9kbmh5YmVwaWNwemF6anpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyMzYyOTUsImV4cCI6MjA2OTgxMjI5NX0.DRjrKxFnLilCzlB66iTcSwCWb0sAJCMZUYIN0ve4i3k"
+    );
 
     async function checkSession() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
         window.location.href = "login.html";
-      } else {
-        const email = session.user.email;
-        document.getElementById("userEmail").innerText = email;
-        localStorage.setItem("dcn_user", session.user.id);
+        return;
       }
+      document.getElementById("userEmail").innerText = session.user.email;
+      localStorage.setItem("dcn_user", session.user.id);
     }
 
     async function logout() {
@@ -51,27 +48,36 @@
       window.location.href = "login.html";
     }
 
-    checkSession(); // Enforce auth
-
-    window.logout = logout;
-    window.submitJob = async function submitJob() {
+    async function submitJob() {
       const inputText = document.getElementById("prompt").value;
       const taskType = document.getElementById("task").value;
-      const userId = localStorage.getItem("dcn_user") || "anonymous";
 
-      const res = await fetch("http://localhost:8000/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          input_text: inputText,
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        alert("You must be logged in.");
+        return;
+      }
+
+      const { error: insertError } = await supabase.from("jobs").insert([
+        {
+          user_id: session.user.id,
           task_type: taskType,
-          node_id: "frontend-web",
-          user_id: userId
-        })
-      });
-      const data = await res.json();
-      document.getElementById("status").innerText = "Job ID: " + data.job_id;
-    };
+          input_text: inputText
+        }
+      ]);
+
+      if (insertError) {
+        alert("Error submitting job: " + insertError.message);
+      } else {
+        alert("Job submitted! Check your dashboard for status.");
+        document.getElementById("status").innerText = "Job submitted and waiting...";
+      }
+    }
+
+    checkSession();
+    window.logout = logout;
+    window.submitJob = submitJob;
   </script>
 </body>
 </html>
